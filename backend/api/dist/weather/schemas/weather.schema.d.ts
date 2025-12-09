@@ -4,12 +4,8 @@ export declare class Weather {
     wind_speed: number;
     city: string;
 }
-export declare const WeatherSchema: import("mongoose").Schema<any, import("mongoose").Model<any, any, any, any, any, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, {
-    [x: string]: any;
-}, import("mongoose").Document<unknown, {}, import("mongoose").FlatRecord<{
-    [x: string]: any;
-}>> & import("mongoose").FlatRecord<{
-    [x: string]: any;
-}> & Required<{
-    _id: unknown;
-}>>;
+export declare const WeatherSchema: import("mongoose").Schema<Weather, import("mongoose").Model<Weather, any, any, any, import("mongoose").Document<unknown, any, Weather> & Weather & {
+    _id: import("mongoose").Types.ObjectId;
+}, any>, {}, {}, {}, {}, import("mongoose").DefaultSchemaOptions, Weather, import("mongoose").Document<unknown, {}, import("mongoose").FlatRecord<Weather>> & import("mongoose").FlatRecord<Weather> & {
+    _id: import("mongoose").Types.ObjectId;
+}>;
