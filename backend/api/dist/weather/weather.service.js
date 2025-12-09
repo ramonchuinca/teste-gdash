@@ -83,4 +83,3 @@ exports.WeatherService = WeatherService;
 exports.WeatherService = WeatherService = __decorate([
     (0, common_1.Injectable)()
 ], WeatherService);
-//# sourceMappingURL=weather.service.js.map

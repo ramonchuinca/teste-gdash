@@ -4,4 +4,3 @@ exports.CreateWeatherDto = void 0;
 class CreateWeatherDto {
 }
 exports.CreateWeatherDto = CreateWeatherDto;
-//# sourceMappingURL=create-weather.dto.js.map

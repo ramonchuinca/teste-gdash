@@ -36,4 +36,3 @@ exports.Weather = Weather = __decorate([
     })
 ], Weather);
 exports.WeatherSchema = mongoose_1.SchemaFactory.createForClass(Weather);
-//# sourceMappingURL=weather.schema.js.map

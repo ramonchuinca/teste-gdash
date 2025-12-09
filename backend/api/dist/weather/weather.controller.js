@@ -31,4 +31,3 @@ exports.WeatherController = WeatherController = __decorate([
     (0, common_1.Controller)('weather'),
     __metadata("design:paramtypes", [weather_service_1.WeatherService])
 ], WeatherController);
-//# sourceMappingURL=weather.controller.js.map

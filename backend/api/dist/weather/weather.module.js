@@ -24,4 +24,3 @@ exports.WeatherModule = WeatherModule = __decorate([
         providers: [weather_service_1.WeatherService],
     })
 ], WeatherModule);
-//# sourceMappingURL=weather.module.js.map

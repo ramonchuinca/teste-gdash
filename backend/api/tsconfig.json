@@ -1,12 +1,18 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2021",
-    "lib": ["es2021", "dom"],
-    "skipLibCheck": true,
+    "target": "es2017",
+    "lib": ["es2017", "dom"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
     "strict": false,
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "esModuleInterop": true
-  }
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
+
