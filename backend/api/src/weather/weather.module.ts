@@ -6,7 +6,9 @@ import { Weather, WeatherSchema } from './schemas/weather.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Weather.name, schema: WeatherSchema }])
+    MongooseModule.forFeature([
+      { name: Weather.name, schema: WeatherSchema },
+    ]),
   ],
   controllers: [WeatherController],
   providers: [WeatherService],

@@ -1,87 +1,47 @@
-version: "3.9"
+version: '3.9'
 
 services:
+  api:
+    build:
+      context: ./backend
+    container_name: clima-api
+    env_file:
+      - ./.env
+    ports:
+      - "3001:3001"
+    depends_on:
+      - rabbitmq
+    networks:
+      - clima-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: clima-frontend
+    env_file:
+      - ./.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - clima-network
+    environment:
+      # para que o frontend use o hostname do container do backend
+      REACT_APP_API_URL: http://api:3001
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: clima-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
-    networks:
-      - clima_net
-
-  mongo:
-    image: mongo:6
-    container_name: clima-mongo
-    restart: always
     ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
+      - "5672:5672"
+      - "15672:15672" # painel web do RabbitMQ
     networks:
-      - clima_net
-
-  api:
-    build: ./backend/api
-    container_name: clima-api
-    restart: always
-    ports:
-      - "3001:3001"
-    environment:
-      MONGO_URL: mongodb://mongo:27017/climaDB
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672/
-    depends_on:
-      - mongo
-      - rabbitmq
-    networks:
-      - clima_net
-
-  worker:
-    build: ./worker-go
-    container_name: clima-worker
-    restart: always
-    environment:
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672/
-      RABBITMQ_QUEUE: weather_queue
-      NEST_API_URL: http://api:3001
-    depends_on:
-      - rabbitmq
-      - api
-    networks:
-      - clima_net
-
-  collector:
-    build: ./collector-python
-    container_name: clima-collector
-    restart: always
-    environment:
-      RABBITMQ_URL: amqp://user:password@rabbitmq:5672/
-      RABBITMQ_QUEUE: weather_queue
-      CITY_LAT: -8.76077
-      CITY_LON: -63.89993
-      FETCH_INTERVAL: 30
-    depends_on:
-      - rabbitmq
-    networks:
-      - clima_net
-
-  frontend:
-    build: ./frontend/dashboard
-    container_name: clima-frontend
-    restart: always
-    ports:
-      - "5173:80"
-    depends_on:
-      - api
-    networks:
-      - clima_net
+      - clima-network
 
 networks:
-  clima_net:
+  clima-network:
     driver: bridge
-
-volumes:
-  mongo_data:

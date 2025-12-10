@@ -25,14 +25,24 @@ __decorate([
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", Number)
-], Weather.prototype, "wind_speed", void 0);
+], Weather.prototype, "windSpeed", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Weather.prototype, "condition", void 0);
 __decorate([
     (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], Weather.prototype, "city", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], Weather.prototype, "createdAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], Weather.prototype, "updatedAt", void 0);
 exports.Weather = Weather = __decorate([
-    (0, mongoose_1.Schema)({
-        timestamps: true
-    })
+    (0, mongoose_1.Schema)({ timestamps: true })
 ], Weather);
 exports.WeatherSchema = mongoose_1.SchemaFactory.createForClass(Weather);

@@ -1,17 +1,16 @@
-# build stage
+# Build do React
 FROM node:18-alpine AS build
-WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+RUN npm install
 
 COPY . .
 RUN npm run build
 
-# production stage - serve with vite preview
-FROM node:18-alpine AS prod
-WORKDIR /app
-COPY --from=build /app/dist ./dist
-RUN npm i -g serve
-EXPOSE 80
-CMD ["serve", "-s", "dist", "-l", "80"]
+# Servidor estático
+FROM nginx:alpine
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
+EXPOSE 3000
+CMD ["nginx", "-g", "daemon off;"]

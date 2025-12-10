@@ -1,16 +1,20 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { WeatherModule } from './weather/weather.module';
-import { UsersModule } from './users/users.module';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { WeatherModule } from './weather/weather.module';
+import { BootstrapService } from './bootstrap/bootstrap.service';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(process.env.MONGO_URL),
+    ConfigModule.forRoot({ isGlobal: true }),
+    MongooseModule.forRoot(process.env.MONGO_URI, { autoCreate: true }),
+    UsersModule,
+    AuthModule,
     WeatherModule,
-    UsersModule
   ],
+  providers: [BootstrapService],
 })
 export class AppModule {}

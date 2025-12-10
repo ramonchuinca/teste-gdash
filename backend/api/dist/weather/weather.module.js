@@ -18,7 +18,9 @@ exports.WeatherModule = WeatherModule;
 exports.WeatherModule = WeatherModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            mongoose_1.MongooseModule.forFeature([{ name: weather_schema_1.Weather.name, schema: weather_schema_1.WeatherSchema }])
+            mongoose_1.MongooseModule.forFeature([
+                { name: weather_schema_1.Weather.name, schema: weather_schema_1.WeatherSchema },
+            ]),
         ],
         controllers: [weather_controller_1.WeatherController],
         providers: [weather_service_1.WeatherService],

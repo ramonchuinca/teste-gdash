@@ -22,7 +22,8 @@ ChartJS.register(
   Legend
 )
 
-const API = import.meta.env.VITE_API_URL || 'http://api:3001'
+// ✅ Use a variável de ambiente
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001'
 
 export default function Dashboard() {
   const [logs, setLogs] = useState([])
@@ -39,8 +40,7 @@ export default function Dashboard() {
     setLoading(true)
     setError(null)
     try {
-      // our NestJS endpoint is /weather (in the API service)
-      const res = await axios.get(`${API}/weather`)
+      const res = await axios.get(`${API_URL}/weather`)
       setLogs(Array.isArray(res.data) ? res.data : [])
     } catch (err) {
       console.error(err)
@@ -53,7 +53,7 @@ export default function Dashboard() {
   const temps = logs
     .slice()
     .reverse()
-    .map((l) => (l.temperature ?? l.temp ?? null))
+    .map((l) => l.temperature ?? l.temp ?? null)
     .filter((v) => v !== null)
 
   const labels = logs
@@ -62,7 +62,7 @@ export default function Dashboard() {
     .map((l) => new Date(l.time ?? l.createdAt).toLocaleTimeString())
 
   const data = {
-    labels: labels,
+    labels,
     datasets: [
       {
         label: 'Temperatura (°C)',
@@ -122,18 +122,12 @@ export default function Dashboard() {
 
           <div className="mt-4 flex gap-2">
             <button
-              onClick={() => {
-                // try to download CSV from API
-                window.open(`${API}/weather/export.csv`, '_blank')
-              }}
+              onClick={() => window.open(`${API_URL}/weather/export.csv`, '_blank')}
               className="px-3 py-2 bg-slate-800 text-white rounded"
             >
               Exportar CSV
             </button>
-            <button
-              onClick={() => fetchLogs()}
-              className="px-3 py-2 border rounded"
-            >
+            <button onClick={fetchLogs} className="px-3 py-2 border rounded">
               Atualizar
             </button>
           </div>
