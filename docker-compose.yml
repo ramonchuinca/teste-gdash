@@ -1,9 +1,6 @@
-version: '3.9'
-
 services:
   api:
-    build:
-      context: ./backend
+    build: ./backend
     container_name: clima-api
     env_file:
       - ./.env
@@ -11,12 +8,12 @@ services:
       - "3001:3001"
     depends_on:
       - rabbitmq
+      - mongo
     networks:
       - clima-network
 
   frontend:
-    build:
-      context: ./frontend
+    build: ./frontend
     container_name: clima-frontend
     env_file:
       - ./.env
@@ -27,8 +24,15 @@ services:
     networks:
       - clima-network
     environment:
-      # para que o frontend use o hostname do container do backend
       REACT_APP_API_URL: http://api:3001
+
+  mongo:
+    image: mongo:6
+    container_name: clima-mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - clima-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -38,7 +42,7 @@ services:
       RABBITMQ_DEFAULT_PASS: password
     ports:
       - "5672:5672"
-      - "15672:15672" # painel web do RabbitMQ
+      - "15672:15672"
     networks:
       - clima-network
 
