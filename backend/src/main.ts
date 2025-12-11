@@ -15,3 +15,23 @@ async function bootstrap() {
   logger.log(`🟢 API listening on http://localhost:${port}`);
 }
 bootstrap();
+
+
+
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Connection } from 'mongoose';
+import { InjectConnection } from '@nestjs/mongoose';
+
+@Injectable()
+export class TestMongoService implements OnModuleInit {
+  constructor(@InjectConnection() private readonly connection: Connection) {}
+
+  async onModuleInit() {
+    try {
+      await this.connection.db.admin().ping();
+      console.log('✅ MongoDB conectado com sucesso!');
+    } catch (err) {
+      console.error('❌ Erro de conexão com MongoDB:', err);
+    }
+  }
+}

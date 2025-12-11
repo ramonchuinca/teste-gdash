@@ -1,51 +1,25 @@
+
+
 services:
-  api:
-    build: ./backend
-    container_name: clima-api
-    env_file:
-      - ./.env
-    ports:
-      - "3001:3001"
-    depends_on:
-      - rabbitmq
-      - mongo
-    networks:
-      - clima-network
-
-  frontend:
-    build: ./frontend
-    container_name: clima-frontend
-    env_file:
-      - ./.env
-    ports:
-      - "3000:3000"
-    depends_on:
-      - api
-    networks:
-      - clima-network
-    environment:
-      REACT_APP_API_URL: http://api:3001
-
-  mongo:
-    image: mongo:6
+  clima-mongo:
+    image: mongo:7
     container_name: clima-mongo
+    restart: always
     ports:
       - "27017:27017"
-    networks:
-      - clima-network
+    volumes:
+      - mongo-data:/data/db
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: clima-rabbitmq
-    environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+  backend:
+    build: ./backend
+    container_name: clima-backend
+    restart: always
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    networks:
-      - clima-network
+      - "3001:3001"  # mapeando a porta certa do NestJS
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - clima-mongo
 
-networks:
-  clima-network:
-    driver: bridge
+volumes:
+  mongo-data:

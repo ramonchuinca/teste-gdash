@@ -1,7 +1,7 @@
 export class CreateWeatherDto {
-  temperature: number;
-  humidity: number;
-  wind_speed: number;
-  city: string;
-  createdAt?: Date;
+  temperature!: number;
+  humidity!: number;
+  windSpeed!: number;
+  city!: string;
+  condition!: string;
 }

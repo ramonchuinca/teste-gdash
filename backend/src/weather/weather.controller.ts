@@ -1,14 +1,18 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { WeatherService } from './weather.service';
+import { CreateWeatherDto } from './dto/create-weather.dto';
 
 @Controller('weather')
 export class WeatherController {
   constructor(private readonly weatherService: WeatherService) {}
 
-  @UseGuards(JwtAuthGuard)
-  @Get('protected')
-  getProtected(): { message: string } {
-    return { message: 'Acesso autorizado com JWT!' };
+  @Post('add')  // -> POST /weather/add
+  async addWeather(@Body() createWeatherDto: CreateWeatherDto) {
+    return this.weatherService.create(createWeatherDto);
+  }
+
+  @Get('all')   // -> GET /weather/all
+  async getAll() {
+    return this.weatherService.findAll();
   }
 }
