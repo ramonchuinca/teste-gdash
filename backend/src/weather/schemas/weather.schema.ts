@@ -1,25 +1,28 @@
+// backend/src/weather/schemas/weather.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema()
-export class Weather extends Document {
+export type WeatherDocument = Weather & Document;
+
+@Schema({ timestamps: true })
+export class Weather {
   @Prop({ required: true })
-  temperature!: number;
+  temperature!: number; // O "!" indica que sempre terá valor
 
   @Prop({ required: true })
   humidity!: number;
 
   @Prop({ required: true })
-  windSpeed!: number;
-
-  @Prop({ required: true })
-  condition!: string;
-
-  @Prop({ required: true })
   city!: string;
 
-  @Prop({ default: Date.now })
-  createdAt!: Date;
+  @Prop()
+  windSpeed?: number;
+
+  @Prop()
+  condition?: string;
+
+  @Prop()
+  createdAt?: Date; // Mongoose vai preencher automaticamente com timestamps
 }
 
 export const WeatherSchema = SchemaFactory.createForClass(Weather);
