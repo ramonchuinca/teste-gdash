@@ -8,20 +8,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const config_1 = require("@nestjs/config");
 const mongoose_1 = require("@nestjs/mongoose");
 const weather_module_1 = require("./weather/weather.module");
-const users_module_1 = require("./users/users.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            config_1.ConfigModule.forRoot({ isGlobal: true }),
-            mongoose_1.MongooseModule.forRoot(process.env.MONGO_URI, { autoCreate: true }),
+            mongoose_1.MongooseModule.forRoot('mongodb://clima-mongo:27017/clima'), // conexão com Mongo do docker
             weather_module_1.WeatherModule,
-            users_module_1.UsersModule
-        ]
+        ],
     })
 ], AppModule);

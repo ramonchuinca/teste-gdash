@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -8,9 +8,17 @@ export class AuthController {
   /** Login */
   @Post('login')
   async login(
-    @Body() body: { username: string; password: string },
-  ): Promise<{ access_token: string }> {
-    // Retorna apenas o token JWT
-    return this.authService.login(body);
+    @Body() body: { email: string; password: string }, // ⚡ mudou de username para email
+  ): Promise<{ access_token: string; user: any }> {
+    const { email, password } = body;
+
+    // Validar usuário
+    const user = await this.authService.validateUser(email, password);
+    if (!user) {
+      throw new UnauthorizedException('Email ou senha inválidos');
+    }
+
+    // Retornar token JWT + dados do usuário
+    return this.authService.login(user);
   }
 }

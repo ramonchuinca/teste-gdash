@@ -14,7 +14,6 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var WeatherService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WeatherService = void 0;
 const common_1 = require("@nestjs/common");
@@ -22,46 +21,57 @@ const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const weather_schema_1 = require("./schemas/weather.schema");
 const axios_1 = __importDefault(require("axios"));
-let WeatherService = WeatherService_1 = class WeatherService {
-    constructor(model) {
-        this.model = model;
-        this.logger = new common_1.Logger(WeatherService_1.name);
+let WeatherService = class WeatherService {
+    constructor(weatherModel) {
+        this.weatherModel = weatherModel;
     }
     async create(data) {
-        try {
-            return await this.model.create(data);
-        }
-        catch (error) {
-            this.logger.error('Erro ao criar registro', error.message);
-            throw new Error('Failed to create weather record');
-        }
+        return this.weatherModel.create(data);
     }
-    async findAll(limit = 100, skip = 0) {
-        return await this.model.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec();
+    // ✔ Corrigido — valores padrão para funcionar com GET /weather/all
+    async findAll(limit = 50, skip = 0) {
+        return this.weatherModel
+            .find()
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .skip(skip)
+            .exec();
     }
-    async getCurrent(city, latitude, longitude) {
+    async getCurrentWeather(city, latitude, longitude) {
         try {
-            const response = await axios_1.default.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
-            const data = response.data?.current_weather;
-            if (!data)
-                return null;
-            return {
-                temperature: data.temperature ?? 0,
-                windSpeed: data.windspeed ?? 0,
-                humidity: data.humidity ?? 0,
-                condition: data.weathercode ?? '',
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+            const response = await axios_1.default.get(url, {
+                timeout: 20000,
+                family: 4, // força IPv4 no Docker
+                validateStatus: () => true,
+            });
+            if (!response.data?.current_weather) {
+                console.error("Resposta inesperada:", response.data);
+                throw new Error("A API não retornou current_weather.");
+            }
+            const weather = response.data.current_weather;
+            const saved = await this.weatherModel.create({
                 city,
-                createdAt: new Date(),
+                temperature: weather.temperature,
+                windSpeed: weather.windspeed,
+                condition: weather.weathercode,
+                timestamp: weather.time,
+                humidity: 50, // mock
+            });
+            return {
+                message: "Clima atual coletado com sucesso!",
+                data: saved
             };
         }
         catch (error) {
-            this.logger.error(`Erro ao buscar clima atual para ${city}`, error.message);
-            return null;
+            console.error("❌ ERRO AO CHAMAR OPEN-METEO");
+            console.error(error);
+            throw new Error("Falha ao consultar a API de clima (Open-Meteo).");
         }
     }
 };
 exports.WeatherService = WeatherService;
-exports.WeatherService = WeatherService = WeatherService_1 = __decorate([
+exports.WeatherService = WeatherService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(weather_schema_1.Weather.name)),
     __metadata("design:paramtypes", [mongoose_2.Model])

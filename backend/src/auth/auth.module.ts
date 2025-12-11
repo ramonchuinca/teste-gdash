@@ -9,9 +9,16 @@ import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
+    // Carrega as variáveis de ambiente globalmente
+    ConfigModule.forRoot({ isGlobal: true }),
+
+    // Módulo de usuários
     UsersModule,
-    PassportModule.register({ defaultStrategy: 'jwt' }), // ⚡ Passport aqui
-    ConfigModule,
+
+    // Passport para autenticação JWT
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+
+    // Configuração assíncrona do JWT
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -22,7 +29,7 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy], // ⚡ JwtStrategy precisa estar aqui
-  exports: [PassportModule, JwtModule],
+  providers: [AuthService, JwtStrategy],
+  exports: [PassportModule, JwtModule, AuthService],
 })
 export class AuthModule {}

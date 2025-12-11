@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WeatherModule = void 0;
+// backend/src/weather/weather.module.ts
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const weather_service_1 = require("./weather.service");
@@ -17,8 +18,10 @@ let WeatherModule = class WeatherModule {
 exports.WeatherModule = WeatherModule;
 exports.WeatherModule = WeatherModule = __decorate([
     (0, common_1.Module)({
-        imports: [mongoose_1.MongooseModule.forFeature([{ name: weather_schema_1.Weather.name, schema: weather_schema_1.WeatherSchema }])],
-        controllers: [weather_controller_1.WeatherController],
+        imports: [
+            mongoose_1.MongooseModule.forFeature([{ name: weather_schema_1.Weather.name, schema: weather_schema_1.WeatherSchema }])
+        ],
         providers: [weather_service_1.WeatherService],
+        controllers: [weather_controller_1.WeatherController],
     })
 ], WeatherModule);

@@ -1,7 +1,8 @@
+// backend/src/users/users.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './schemas/user.schema';
+import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
 
@@ -9,7 +10,7 @@ import * as bcrypt from 'bcryptjs';
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
   /** Cria um usuário com senha hash */
   async create(data: CreateUserDto): Promise<User> {
@@ -24,12 +25,12 @@ export class UsersService {
   }
 
   /** Lista usuários */
-  async findAll(limit = 100, skip = 0) {
-    return await this.userModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec();
+  async findAll(limit = 100, skip = 0): Promise<User[]> {
+    return this.userModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec();
   }
 
   /** Busca usuário por email */
-  async findByEmail(email: string) {
-    return await this.userModel.findOne({ email }).exec();
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
   }
 }

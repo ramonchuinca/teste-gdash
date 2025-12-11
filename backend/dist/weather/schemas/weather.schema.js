@@ -10,9 +10,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WeatherSchema = exports.Weather = void 0;
+// backend/src/weather/schemas/weather.schema.ts
 const mongoose_1 = require("@nestjs/mongoose");
-const mongoose_2 = require("mongoose");
-let Weather = class Weather extends mongoose_2.Document {
+let Weather = class Weather {
 };
 exports.Weather = Weather;
 __decorate([
@@ -25,21 +25,21 @@ __decorate([
 ], Weather.prototype, "humidity", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
-    __metadata("design:type", Number)
-], Weather.prototype, "windSpeed", void 0);
-__decorate([
-    (0, mongoose_1.Prop)({ required: true }),
-    __metadata("design:type", String)
-], Weather.prototype, "condition", void 0);
-__decorate([
-    (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
 ], Weather.prototype, "city", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ default: Date.now }),
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Number)
+], Weather.prototype, "windSpeed", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Weather.prototype, "condition", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
     __metadata("design:type", Date)
 ], Weather.prototype, "createdAt", void 0);
 exports.Weather = Weather = __decorate([
-    (0, mongoose_1.Schema)()
+    (0, mongoose_1.Schema)({ timestamps: true })
 ], Weather);
 exports.WeatherSchema = mongoose_1.SchemaFactory.createForClass(Weather);
