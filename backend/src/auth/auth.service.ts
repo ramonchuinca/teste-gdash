@@ -13,6 +13,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.users.findByEmail(email);
+    console.log('funciona',user)
     if (!user) return null;
 
     // ⚡ comparar senha primeiro

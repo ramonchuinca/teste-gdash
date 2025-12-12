@@ -21,8 +21,8 @@ export class Weather {
   @Prop()
   condition?: string;
 
-  @Prop()
-  createdAt?: Date; // Mongoose vai preencher automaticamente com timestamps
+  // @Prop()
+  // createdAt?: Date; 
 }
 
 export const WeatherSchema = SchemaFactory.createForClass(Weather);

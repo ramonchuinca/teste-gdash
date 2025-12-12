@@ -20,11 +20,12 @@ export class BootstrapService implements OnModuleInit {
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
       await this.usersService.create({
-        name: 'Admin',
-        email: adminEmail,
-        password: hashedPassword,
-        roles: ['admin'],
-      });
+  name: 'Admin',
+  email: adminEmail,
+  password: adminPassword, // 🔥 sem hash!
+  roles: ['admin'],
+});
+
 
       this.logger.log('Default admin created successfully!');
     } else {

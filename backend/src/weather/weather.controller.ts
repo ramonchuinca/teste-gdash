@@ -1,20 +1,31 @@
 import { 
   Controller, 
   Get, 
+  Post,
   Query, 
   BadRequestException,
-  Patch,
-  Param,
   Body,
-  Res
 } from '@nestjs/common';
 import { WeatherService } from './weather.service';
-import { Response } from 'express';
+import { CreateWeatherDto } from './dto/create-weather.dto';
 
 @Controller('weather')
 export class WeatherController {
   constructor(private readonly weatherService: WeatherService) {}
 
+  /**
+   * POST /weather
+   * Usado pelo Worker Go para inserir dados no Mongo
+   */
+  @Post()
+  async createWeather(@Body() data: CreateWeatherDto) {
+    return this.weatherService.create(data);
+  }
+
+  /**
+   * GET /weather/current
+   * Consulta API externa Open-Meteo
+   */
   @Get('current')
   async getCurrent(
     @Query('city') city: string,
@@ -36,7 +47,7 @@ export class WeatherController {
 
     if (isNaN(finalLat) || isNaN(finalLon)) {
       throw new BadRequestException(
-        'Latitude e longitude precisam ser números válidos.'
+        'Latitude e longitude precisam ser números válidos.',
       );
     }
 
@@ -47,9 +58,12 @@ export class WeatherController {
     );
   }
 
-  // ✔ Já existia — apenas mantido e corrigido findAll() no Service
+  /**
+   * GET /weather/all
+   * Retorna todos os registros do MongoDB
+   */
   @Get('all')
   async getAll() {
-    return await this.weatherService.findAll();
+    return this.weatherService.findAll();
   }
 }

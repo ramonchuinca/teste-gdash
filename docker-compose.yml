@@ -1,6 +1,9 @@
 
 
 services:
+  # ------------------------------
+  # MongoDB
+  # ------------------------------
   clima-mongo:
     image: mongo:7
     container_name: clima-mongo
@@ -9,17 +12,86 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    networks:
+      - app-net
 
+  # ------------------------------
+  # RabbitMQ
+  # ------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: clima-rabbit
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - app-net
+
+  # ------------------------------
+  # Backend NestJS
+  # ------------------------------
   backend:
     build: ./backend
     container_name: clima-backend
     restart: always
     ports:
-      - "3001:3001"  # mapeando a porta certa do NestJS
+      - "3001:3001"
     env_file:
       - ./backend/.env
     depends_on:
       - clima-mongo
+      - rabbitmq
+    networks:
+      - app-net
 
+  # ------------------------------
+  # Python Weather Collector
+  # ------------------------------
+  python-collector:
+    build: ./collector-python
+    container_name: clima-collector
+    restart: always
+    environment:
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      RABBITMQ_QUEUE: "weather_queue"
+      CITY_LAT: "-8.76077"
+      CITY_LON: "-63.89993"
+      FETCH_INTERVAL: "3600"
+    depends_on:
+      - rabbitmq
+    networks:
+      - app-net
+
+  # ------------------------------
+  # Go Worker (Consumer)
+  # ------------------------------
+  worker-go:
+    build: ./worker-go
+    container_name: clima-worker
+    restart: always
+    environment:
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      RABBITMQ_QUEUE: "weather_queue"
+      NEST_API_URL: "http://backend:3001"
+    depends_on:
+      - backend
+      - rabbitmq
+    networks:
+      - app-net
+
+# ------------------------------
+# Volumes
+# ------------------------------
 volumes:
   mongo-data:
+
+# ------------------------------
+# Network
+# ------------------------------
+networks:
+  app-net:
+    driver: bridge

@@ -10,6 +10,7 @@ export class AuthController {
   async login(
     @Body() body: { email: string; password: string }, // ⚡ mudou de username para email
   ): Promise<{ access_token: string; user: any }> {
+    console.log(body)
     const { email, password } = body;
 
     // Validar usuário
