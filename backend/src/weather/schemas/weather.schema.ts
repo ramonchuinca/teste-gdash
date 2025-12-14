@@ -7,7 +7,7 @@ export type WeatherDocument = Weather & Document;
 @Schema({ timestamps: true })
 export class Weather {
   @Prop({ required: true })
-  temperature!: number; // O "!" indica que sempre terá valor
+  temperature!: number;
 
   @Prop({ required: true })
   humidity!: number;
@@ -21,8 +21,11 @@ export class Weather {
   @Prop()
   condition?: string;
 
-  // @Prop()
-  // createdAt?: Date; 
+  @Prop()
+  source?: string; // ex: "open-meteo"
+
+  @Prop()
+  collectedAt?: Date; // data vinda do payload externo
 }
 
 export const WeatherSchema = SchemaFactory.createForClass(Weather);

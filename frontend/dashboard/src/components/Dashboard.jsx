@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,12 +23,6 @@ ChartJS.register(
   Legend
 )
 
-// ✅ VARIÁVEL DE AMBIENTE NO VITE
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
-
-
-
 export default function Dashboard() {
   const [logs, setLogs] = useState([])
   const [current, setCurrent] = useState(null)
@@ -43,17 +38,17 @@ export default function Dashboard() {
   async function loadAll() {
     setLoading(true)
     setError(null)
+
     try {
       // 🔥 1) LISTA TODOS OS REGISTROS
-      const resLogs = await axios.get(`${API_URL}/weather/all`)
+      const resLogs = await api.get('/weather/all')
       setLogs(Array.isArray(resLogs.data) ? resLogs.data : [])
 
       // 🔥 2) BUSCA O CLIMA ATUAL
-      const resCurrent = await axios.get(
-        `${API_URL}/weather/current?city=Porto Velho&lat=-8.7611&lon=-63.9039`
+      const resCurrent = await api.get(
+        '/weather/current?city=Porto Velho&lat=-8.7611&lon=-63.9039'
       )
       setCurrent(resCurrent.data.data)
-
     } catch (err) {
       console.error(err)
       setError('Erro ao carregar dados da API. Verifique se está no ar.')
@@ -94,9 +89,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      
       {/* ---------------------------
-          🔥 WIDGET GOOGLE WEATHER 
+          🔥 WIDGET CLIMA ATUAL
       ---------------------------- */}
       {current && (
         <div className="bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-xl shadow p-6 flex items-center justify-between">
@@ -113,9 +107,7 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="text-7xl opacity-90">
-            ☀️
-          </div>
+          <div className="text-7xl opacity-90">☀️</div>
         </div>
       )}
 
@@ -133,10 +125,11 @@ export default function Dashboard() {
           🔥 GRÁFICO + TABELA
       ---------------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
         {/* GRÁFICO */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold mb-4">Temperatura - Últimas Leituras</h3>
+          <h3 className="font-semibold mb-4">
+            Temperatura - Últimas Leituras
+          </h3>
 
           {loading ? (
             <div>Carregando gráfico...</div>
@@ -176,7 +169,12 @@ export default function Dashboard() {
 
           <div className="mt-4 flex gap-2">
             <button
-              onClick={() => window.open(`${API_URL}/weather/export.csv`, '_blank')}
+              onClick={() =>
+                window.open(
+                  `${import.meta.env.VITE_API_URL}/weather/export.csv`,
+                  '_blank'
+                )
+              }
               className="px-3 py-2 bg-blue-600 text-white rounded"
             >
               Exportar CSV
@@ -191,7 +189,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
     </div>
   )
 }

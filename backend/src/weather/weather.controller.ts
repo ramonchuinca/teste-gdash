@@ -1,40 +1,48 @@
-import { 
-  Controller, 
-  Get, 
+import {
+  Controller,
+  Get,
   Post,
-  Query, 
+  Query,
   BadRequestException,
   Body,
 } from '@nestjs/common';
+
 import { WeatherService } from './weather.service';
-import { CreateWeatherDto } from './dto/create-weather.dto';
+import { CreateWeatherFromWorkerDto } from './dto/create-weather.dto';
+import { Res } from '@nestjs/common';
+import { Response } from 'express';
 
 @Controller('weather')
 export class WeatherController {
   constructor(private readonly weatherService: WeatherService) {}
 
   /**
-   * POST /weather
-   * Usado pelo Worker Go para inserir dados no Mongo
+   * POST /weather/logs
+   * Usado pelo Worker Go
    */
-  @Post()
-  async createWeather(@Body() data: CreateWeatherDto) {
-    return this.weatherService.create(data);
+  @Post('logs')
+  async createFromWorker(
+    @Body() data: CreateWeatherFromWorkerDto,
+  ) {
+    if (
+      data.temperature === undefined ||
+      data.humidity === undefined ||
+      !data.city
+    ) {
+      throw new BadRequestException('Payload inválido enviado pelo worker');
+    }
+
+    return this.weatherService.createFromWorker(data);
   }
 
   /**
    * GET /weather/current
-   * Consulta API externa Open-Meteo
    */
   @Get('current')
   async getCurrent(
     @Query('city') city: string,
-
-    // parâmetros longos
     @Query('latitude') latitude: string,
     @Query('longitude') longitude: string,
-
-    // parâmetros curtos
     @Query('lat') lat: string,
     @Query('lon') lon: string,
   ) {
@@ -51,7 +59,7 @@ export class WeatherController {
       );
     }
 
-    return await this.weatherService.getCurrentWeather(
+    return this.weatherService.getCurrentWeather(
       city,
       finalLat,
       finalLon,
@@ -60,7 +68,6 @@ export class WeatherController {
 
   /**
    * GET /weather/all
-   * Retorna todos os registros do MongoDB
    */
   @Get('all')
   async getAll() {

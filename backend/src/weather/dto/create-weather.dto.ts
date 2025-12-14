@@ -1,8 +1,12 @@
-// backend/src/weather/dto/create-weather.dto.ts
-export class CreateWeatherDto {
+export class CreateWeatherFromWorkerDto {
   temperature!: number;
-  windSpeed?: number;
   humidity!: number;
   city!: string;
+
+  windSpeed?: number;
   condition?: string;
+
+  // controle de origem e tempo
+  collectedAt?: string;
+  source?: string;
 }

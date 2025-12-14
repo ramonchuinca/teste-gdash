@@ -33,6 +33,7 @@
     "@nestjs/cli": "^10.3.2",
     "@nestjs/schematics": "^10.2.1",
     "@types/bcryptjs": "^2.4.6",
+    "@types/json2csv": "^5.0.7",
     "@types/node": "^20.19.26",
     "@types/passport-jwt": "^4.0.1",
     "ts-node": "^10.9.2",
