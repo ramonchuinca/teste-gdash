@@ -20,52 +20,39 @@ export class WeatherDashboardService {
       .limit(50)
       .lean()
 
-    if (!logs || logs.length === 0) {
-      return {
-        city,
-        period: 'last_24h',
-        updatedAt: new Date(),
-        cards: null,
-        chart: { labels: [], data: [] },
-        table: [],
-        insights: [],
-      }
+    const baseResponse = {
+      city,
+      period: 'last_24h',
+      updatedAt: new Date(),
+      cards: null,
+      chart: { labels: [], data: [] },
+      table: [],
+      insights: [],
     }
+
+    if (!logs.length) return baseResponse
 
     const temps = logs
       .map(l => l.temperature)
       .filter((t): t is number => typeof t === 'number')
 
-    if (temps.length === 0) {
-      return {
-        city,
-        period: 'last_24h',
-        updatedAt: new Date(),
-        cards: null,
-        chart: { labels: [], data: [] },
-        table: [],
-        insights: [],
-      }
-    }
+    if (!temps.length) return baseResponse
 
     const current = temps[0]
     const avg = temps.reduce((a, b) => a + b, 0) / temps.length
     const max = Math.max(...temps)
     const min = Math.min(...temps)
 
+    const oldest = temps[temps.length - 1]
     const trend =
-      temps.length > 1
-        ? temps[0] > temps[temps.length - 1]
-          ? 'up'
-          : temps[0] < temps[temps.length - 1]
-          ? 'down'
-          : 'stable'
-        : 'stable'
+      current > oldest ? 'up' :
+      current < oldest ? 'down' :
+      'stable'
+
+    const orderedLogs = [...logs].reverse()
 
     return {
-      city,
-      period: 'last_24h',
-      updatedAt: new Date(),
+      ...baseResponse,
 
       cards: {
         current,
@@ -76,18 +63,15 @@ export class WeatherDashboardService {
       },
 
       chart: {
-        labels: logs
-          .slice()
-          .reverse()
-          .map(l =>
-            l.collectedAt
-              ? new Date(l.collectedAt).toLocaleTimeString('pt-BR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : '--',
-          ),
-        data: logs.slice().reverse().map(l => l.temperature ?? 0),
+        labels: orderedLogs.map(l =>
+          l.collectedAt
+            ? new Date(l.collectedAt).toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : '--',
+        ),
+        data: orderedLogs.map(l => l.temperature ?? 0),
       },
 
       table: logs.slice(0, 10).map(l => ({
@@ -97,13 +81,14 @@ export class WeatherDashboardService {
         humidity: l.humidity ?? 0,
       })),
 
-      insights: this.insightsService.generate({
-        current,
-        avg,
-        max,
-        min,
-        trend,
-      }),
+      insights:
+        this.insightsService.generate({
+          current,
+          avg,
+          max,
+          min,
+          trend,
+        }) ?? [],
     }
   }
 }

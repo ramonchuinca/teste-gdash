@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import zoomPlugin from "chartjs-plugin-zoom";
 import { Line } from "react-chartjs-2";
 
 ChartJS.register(
@@ -19,7 +20,8 @@ ChartJS.register(
   PointElement,
   LineElement,
   Tooltip,
-  Legend
+  Legend,
+  zoomPlugin
 );
 
 export default function Dashboard() {
@@ -31,14 +33,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // 🧠 Cache + debounce
   const cacheRef = useRef({ data: null, timestamp: 0 });
   const debounceRef = useRef(null);
+  const chartRef = useRef(null);
 
   const loadDashboard = useCallback(async (force = false) => {
     const now = Date.now();
 
-    // ✅ CACHE (30s)
     if (
       !force &&
       cacheRef.current.data &&
@@ -53,7 +54,6 @@ export default function Dashboard() {
       return;
     }
 
-    // ⏳ DEBOUNCE (300ms)
     clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
@@ -87,6 +87,16 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [loadDashboard]);
 
+  /* 🎨 CORES DINÂMICAS */
+  const getTempColor = (temp = 0) => {
+    if (temp >= 35) return "rgb(239, 68, 68)";
+    if (temp >= 30) return "rgb(249, 115, 22)";
+    if (temp >= 20) return "rgb(34, 197, 94)";
+    return "rgb(59, 130, 246)";
+  };
+
+  const maxTemp = chart.data.length ? Math.max(...chart.data) : 0;
+
   const chartData = {
     labels: chart.labels,
     datasets: [
@@ -94,63 +104,126 @@ export default function Dashboard() {
         label: "Temperatura (°C)",
         data: chart.data,
         tension: 0.3,
+        borderColor: getTempColor(maxTemp),
+        backgroundColor: "rgba(59,130,246,0.1)",
+        pointBackgroundColor: chart.data.map(getTempColor),
+        pointRadius: 4,
       },
     ],
   };
 
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const t = ctx.parsed.y;
+            let status = "Confortável";
+            if (t >= 35) status = "🔥 Calor extremo";
+            else if (t >= 30) status = "🌡️ Quente";
+            else if (t <= 10) status = "❄️ Frio";
+            return `${t}°C — ${status}`;
+          },
+        },
+      },
+      zoom: {
+        pan: { enabled: true, mode: "x" },
+        zoom: {
+          wheel: { enabled: true },
+          pinch: { enabled: true },
+          mode: "x",
+        },
+      },
+    },
+  };
+
+  /* 📤 EXPORTAR CSV */
+  const exportCSV = () => {
+    if (!table.length) return;
+
+    const headers = ["Data/Hora", "Temperatura", "Vento", "Umidade"];
+    const rows = table.map((r) => [
+      new Date(r.time).toLocaleString(),
+      r.temperature,
+      r.windSpeed,
+      r.humidity,
+    ]);
+
+    const csv =
+      headers.join(";") + "\n" + rows.map((r) => r.join(";")).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "weather_dashboard.csv";
+    link.click();
+  };
+
   return (
     <div className="space-y-6 p-6">
-      {/* ERRO */}
       {error && <div className="text-red-600">{error}</div>}
 
       {/* CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {loading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
-        ) : (
-          cards && (
-            <>
-              <Card title="Atual" value={`${cards.current}°C`} />
-              <Card title="Média" value={`${cards.avg}°C`} />
-              <Card title="Máxima" value={`${cards.max}°C`} />
-              <Card
-                title="Tendência"
-                value={
-                  cards.trend === "up"
-                    ? "⬆ Subindo"
-                    : cards.trend === "down"
-                    ? "⬇ Caindo"
-                    : "➖ Estável"
-                }
-              />
-            </>
-          )
-        )}
+        {loading
+          ? [...Array(4)].map((_, i) => <SkeletonCard key={i} />)
+          : cards && (
+              <>
+                <Card title="Atual" value={`${cards.current}°C`} />
+                <Card title="Média" value={`${cards.avg}°C`} />
+                <Card title="Máxima" value={`${cards.max}°C`} />
+                <Card
+                  title="Tendência"
+                  value={
+                    cards.trend === "up"
+                      ? "⬆ Subindo"
+                      : cards.trend === "down"
+                      ? "⬇ Caindo"
+                      : "➖ Estável"
+                  }
+                />
+              </>
+            )}
       </div>
 
       {/* GRÁFICO */}
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold mb-4">
-          Temperatura — Últimas leituras
-        </h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-semibold">Temperatura — Últimas leituras</h3>
 
-        {loading ? (
-          <div className="h-64 bg-slate-200 rounded-lg animate-pulse" />
-        ) : (
-          <Line data={chartData} />
-        )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => chartRef.current?.resetZoom?.()}
+              className="px-3 py-1 text-sm bg-slate-200 rounded"
+            >
+              Reset Zoom
+            </button>
+            <button
+              onClick={exportCSV}
+              className="px-3 py-1 text-sm bg-blue-600 text-white rounded"
+            >
+              Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <div className="relative h-64">
+          {loading && (
+            <div className="absolute inset-0 bg-slate-200 rounded-lg animate-pulse z-10" />
+          )}
+
+          <Line ref={chartRef} data={chartData} options={chartOptions} />
+        </div>
       </div>
 
       {/* TABELA */}
       {!loading && (
         <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
           <h3 className="font-semibold mb-4">Histórico</h3>
-
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left">
@@ -189,6 +262,7 @@ export default function Dashboard() {
   );
 }
 
+/* COMPONENTES */
 function Card({ title, value }) {
   return (
     <div className="bg-white rounded-lg shadow p-4 transition hover:scale-[1.02]">
