@@ -1,53 +1,83 @@
-// backend/src/weather/insights/weather-insights.service.ts
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Weather, WeatherDocument } from '../schemas/weather.schema';
+import { Injectable } from '@nestjs/common'
+
+export type InsightType = 'info' | 'warning' | 'danger'
+
+export interface WeatherInsight {
+  type: InsightType
+  code: string
+  message: string
+}
 
 @Injectable()
 export class WeatherInsightsService {
-  constructor(
-    @InjectModel(Weather.name)
-    private readonly weatherModel: Model<WeatherDocument>,
-  ) {}
+  generate({
+    current,
+    avg,
+    max,
+    min,
+    trend,
+  }: {
+    current: number
+    avg: number
+    max: number
+    min: number
+    trend: 'up' | 'down' | 'stable'
+  }): WeatherInsight[] {
+    const insights: WeatherInsight[] = []
 
-  async getInsights(limit = 24) {
-    const data = await this.weatherModel
-      .find()
-      .sort({ collectedAt: -1 })
-      .limit(limit)
-      .exec();
-
-    if (!data.length) {
-      return { message: 'Sem dados suficientes para análise.' };
+    /* =========================
+       📈 Tendência
+    ========================= */
+    if (trend === 'up') {
+      insights.push({
+        type: 'info',
+        code: 'TREND_UP',
+        message: 'Temperatura em tendência de alta.',
+      })
+    } else if (trend === 'down') {
+      insights.push({
+        type: 'info',
+        code: 'TREND_DOWN',
+        message: 'Temperatura em tendência de queda.',
+      })
     }
 
-    const temps = data.map(d => d.temperature);
+    /* =========================
+       🔥 / ❄️ Desvio da média
+    ========================= */
+    if (current >= avg + 2) {
+      insights.push({
+        type: 'warning',
+        code: 'ABOVE_AVERAGE',
+        message: 'Temperatura atual significativamente acima da média.',
+      })
+    } else if (current <= avg - 2) {
+      insights.push({
+        type: 'warning',
+        code: 'BELOW_AVERAGE',
+        message: 'Temperatura atual abaixo da média diária.',
+      })
+    }
 
-    const avg =
-      temps.reduce((a, b) => a + b, 0) / temps.length;
+    /* =========================
+       🚨 Extremos
+    ========================= */
+    if (max >= 35) {
+      insights.push({
+        type: 'danger',
+        code: 'EXTREME_HEAT',
+        message: 'Pico de calor elevado detectado. Atenção!',
+      })
+    }
 
-    const max = Math.max(...temps);
-    const min = Math.min(...temps);
+    if (min <= 10) {
+      insights.push({
+        type: 'danger',
+        code: 'EXTREME_COLD',
+        message: 'Temperatura mínima muito baixa detectada.',
+      })
+    }
 
-    const trend =
-      temps[0] > temps[temps.length - 1]
-        ? 'subindo'
-        : temps[0] < temps[temps.length - 1]
-        ? 'descendo'
-        : 'estável';
-
-    const summary = `Nos últimos ${temps.length} registros, a temperatura média foi de ${avg.toFixed(
-      1,
-    )}°C, com pico de ${max}°C e mínima de ${min}°C. A tendência está ${trend}.`;
-
-    return {
-      average: Number(avg.toFixed(1)),
-      max,
-      min,
-      trend,
-      lastCollectedAt: data[0].collectedAt,
-      summary,
-    };
+    return insights
   }
 }

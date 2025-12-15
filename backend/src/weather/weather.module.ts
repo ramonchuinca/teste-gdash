@@ -6,11 +6,12 @@ import { WeatherController } from './weather.controller';
 import { Weather, WeatherSchema } from './schemas/weather.schema';
 
 // Dashboard
-import { DashboardController } from '../weather/dashboard.controller';
+import { DashboardController } from './dashboard.controller';
+import { WeatherDashboardService } from './dashboard.service';
 
 // Insights
 import { WeatherInsightsService } from './insights/weather-insights.service';
-import { WeatherInsightsController } from './insights/weather-insights.controller';
+
 
 @Module({
   imports: [
@@ -21,11 +22,12 @@ import { WeatherInsightsController } from './insights/weather-insights.controlle
   providers: [
     WeatherService,
     WeatherInsightsService,
+    WeatherDashboardService, // ✅ ADICIONADO
   ],
   controllers: [
     WeatherController,
     DashboardController,
-    WeatherInsightsController,
+    
   ],
 })
 export class WeatherModule {}

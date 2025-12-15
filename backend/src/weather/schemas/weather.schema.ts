@@ -1,31 +1,30 @@
-// backend/src/weather/schemas/weather.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 export type WeatherDocument = Weather & Document;
 
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: false,
+})
 export class Weather {
-  @Prop({ required: true })
-  temperature!: number;
-
-  @Prop({ required: true })
-  humidity!: number;
-
   @Prop({ required: true })
   city!: string;
 
-  @Prop()
-  windSpeed?: number;
+  @Prop({ required: true })
+  temperature!: number;
 
   @Prop()
-  condition?: string;
+  windSpeed!: number;
 
   @Prop()
-  source?: string; // ex: "open-meteo"
+  humidity!: number;
 
-  @Prop()
-  collectedAt?: Date; // data vinda do payload externo
+  @Prop({
+    type: Date,
+    required: true,
+    default: () => new Date(),
+  })
+  collectedAt!: Date;
 }
 
 export const WeatherSchema = SchemaFactory.createForClass(Weather);

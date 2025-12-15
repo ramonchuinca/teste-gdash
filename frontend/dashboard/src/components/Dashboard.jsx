@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import api from '../api/axios'
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import api from "../api/axios";
+import { SkeletonCard } from "./SkeletonCard";
 
 import {
   Chart as ChartJS,
@@ -7,188 +8,206 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  Title,
   Tooltip,
   Legend,
-} from 'chart.js'
-import { Line } from 'react-chartjs-2'
+} from "chart.js";
+import { Line } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  Title,
   Tooltip,
   Legend
-)
+);
 
 export default function Dashboard() {
-  const [logs, setLogs] = useState([])
-  const [current, setCurrent] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [cards, setCards] = useState(null);
+  const [chart, setChart] = useState({ labels: [], data: [] });
+  const [table, setTable] = useState([]);
+  const [insights, setInsights] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 🧠 Cache + debounce
+  const cacheRef = useRef({ data: null, timestamp: 0 });
+  const debounceRef = useRef(null);
+
+  const loadDashboard = useCallback(async (force = false) => {
+    const now = Date.now();
+
+    // ✅ CACHE (30s)
+    if (
+      !force &&
+      cacheRef.current.data &&
+      now - cacheRef.current.timestamp < 30_000
+    ) {
+      const cached = cacheRef.current.data;
+      setCards(cached.cards);
+      setChart(cached.chart);
+      setTable(cached.table);
+      setInsights(cached.insights);
+      setLoading(false);
+      return;
+    }
+
+    // ⏳ DEBOUNCE (300ms)
+    clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await api.get("/dashboard");
+
+        cacheRef.current = {
+          data: res.data,
+          timestamp: Date.now(),
+        };
+
+        setCards(res.data?.cards ?? null);
+        setChart(res.data?.chart ?? { labels: [], data: [] });
+        setTable(Array.isArray(res.data?.table) ? res.data.table : []);
+        setInsights(Array.isArray(res.data?.insights) ? res.data.insights : []);
+      } catch (e) {
+        console.error(e);
+        setError("Erro ao carregar dashboard");
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+  }, []);
 
   useEffect(() => {
-    loadAll()
-    const interval = setInterval(loadAll, 30_000)
-    return () => clearInterval(interval)
-  }, [])
+    loadDashboard(true);
+    const interval = setInterval(() => loadDashboard(), 30_000);
+    return () => clearInterval(interval);
+  }, [loadDashboard]);
 
-  async function loadAll() {
-    setLoading(true)
-    setError(null)
-
-    try {
-      // 🔥 1) LISTA TODOS OS REGISTROS
-      const resLogs = await api.get('/weather/all')
-      setLogs(Array.isArray(resLogs.data) ? resLogs.data : [])
-
-      // 🔥 2) BUSCA O CLIMA ATUAL
-      const resCurrent = await api.get(
-        '/weather/current?city=Porto Velho&lat=-8.7611&lon=-63.9039'
-      )
-      setCurrent(resCurrent.data.data)
-    } catch (err) {
-      console.error(err)
-      setError('Erro ao carregar dados da API. Verifique se está no ar.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // ------------------------------
-  // 🔥 GRÁFICO DE TEMPERATURA
-  // ------------------------------
-  const temps = logs
-    .slice()
-    .reverse()
-    .map((l) => l.temperature ?? null)
-
-  const labels = logs
-    .slice()
-    .reverse()
-    .map((l) =>
-      new Date(l.createdAt).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    )
-
-  const data = {
-    labels,
+  const chartData = {
+    labels: chart.labels,
     datasets: [
       {
-        label: 'Temperatura (°C)',
-        data: temps,
+        label: "Temperatura (°C)",
+        data: chart.data,
         tension: 0.3,
-        fill: false,
       },
     ],
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* ---------------------------
-          🔥 WIDGET CLIMA ATUAL
-      ---------------------------- */}
-      {current && (
-        <div className="bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-xl shadow p-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Porto Velho</h2>
-            <p className="text-lg opacity-90">
-              {new Date(current.createdAt).toLocaleString()}
-            </p>
-            <p className="text-6xl font-semibold mt-3">
-              {current.temperature}°C
-            </p>
-            <p className="mt-2 opacity-90">
-              Vento: {current.windSpeed} m/s • Umidade: {current.humidity}%
-            </p>
-          </div>
+    <div className="space-y-6 p-6">
+      {/* ERRO */}
+      {error && <div className="text-red-600">{error}</div>}
 
-          <div className="text-7xl opacity-90">☀️</div>
+      {/* CARDS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {loading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          cards && (
+            <>
+              <Card title="Atual" value={`${cards.current}°C`} />
+              <Card title="Média" value={`${cards.avg}°C`} />
+              <Card title="Máxima" value={`${cards.max}°C`} />
+              <Card
+                title="Tendência"
+                value={
+                  cards.trend === "up"
+                    ? "⬆ Subindo"
+                    : cards.trend === "down"
+                    ? "⬇ Caindo"
+                    : "➖ Estável"
+                }
+              />
+            </>
+          )
+        )}
+      </div>
+
+      {/* GRÁFICO */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <h3 className="font-semibold mb-4">
+          Temperatura — Últimas leituras
+        </h3>
+
+        {loading ? (
+          <div className="h-64 bg-slate-200 rounded-lg animate-pulse" />
+        ) : (
+          <Line data={chartData} />
+        )}
+      </div>
+
+      {/* TABELA */}
+      {!loading && (
+        <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
+          <h3 className="font-semibold mb-4">Histórico</h3>
+
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left">
+                <th className="py-2">Data/Hora</th>
+                <th>Temp</th>
+                <th>Vento</th>
+                <th>Umidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {table.map((row, i) => (
+                <tr key={i} className="border-t">
+                  <td className="py-2">
+                    {new Date(row.time).toLocaleString()}
+                  </td>
+                  <td>{row.temperature}°C</td>
+                  <td>{row.windSpeed} m/s</td>
+                  <td>{row.humidity}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* ---------------------------
-          🔥 CARD VISÃO GERAL
-      ---------------------------- */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h2 className="text-lg font-medium mb-2">Visão Geral</h2>
-        <p className="text-sm text-slate-600">
-          Pipeline: Python → RabbitMQ → Go → NestJS → Dashboard React.
-        </p>
-      </div>
-
-      {/* ---------------------------
-          🔥 GRÁFICO + TABELA
-      ---------------------------- */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* GRÁFICO */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold mb-4">
-            Temperatura - Últimas Leituras
-          </h3>
-
-          {loading ? (
-            <div>Carregando gráfico...</div>
-          ) : error ? (
-            <div className="text-red-600">{error}</div>
-          ) : (
-            <Line data={data} />
-          )}
+      {/* INSIGHTS */}
+      {!loading && insights.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="font-semibold">Insights</h3>
+          {insights.map((insight, i) => (
+            <Insight key={i} insight={insight} />
+          ))}
         </div>
-
-        {/* TABELA */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="font-semibold mb-4">Últimos registros</h3>
-
-          <div className="overflow-auto max-h-64">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-slate-500">
-                <tr>
-                  <th className="pb-2">Horário</th>
-                  <th className="pb-2">Temp (°C)</th>
-                  <th className="pb-2">Vento</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map((l, i) => (
-                  <tr key={i} className="border-t">
-                    <td className="py-2">
-                      {new Date(l.createdAt).toLocaleString()}
-                    </td>
-                    <td className="py-2">{l.temperature ?? '-'}</td>
-                    <td className="py-2">{l.windSpeed ?? '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={() =>
-                window.open(
-                  `${import.meta.env.VITE_API_URL}/weather/export.csv`,
-                  '_blank'
-                )
-              }
-              className="px-3 py-2 bg-blue-600 text-white rounded"
-            >
-              Exportar CSV
-            </button>
-
-            <button
-              onClick={loadAll}
-              className="px-3 py-2 border rounded"
-            >
-              Atualizar
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
-  )
+  );
+}
+
+function Card({ title, value }) {
+  return (
+    <div className="bg-white rounded-lg shadow p-4 transition hover:scale-[1.02]">
+      <p className="text-sm text-slate-500">{title}</p>
+      <p className="text-2xl font-semibold mt-1">{value}</p>
+    </div>
+  );
+}
+
+function Insight({ insight }) {
+  const styles = {
+    info: "bg-blue-50 border-blue-200 text-blue-800",
+    warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+    danger: "bg-red-50 border-red-200 text-red-800",
+  };
+
+  return (
+    <div className={`border rounded-lg p-3 ${styles[insight.type]}`}>
+      {insight.message}
+    </div>
+  );
 }

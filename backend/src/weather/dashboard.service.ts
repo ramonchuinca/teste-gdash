@@ -1,44 +1,66 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Weather, WeatherDocument } from './schemas/weather.schema';
+import { Injectable } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
+
+import { Weather, WeatherDocument } from './schemas/weather.schema'
+import { WeatherInsightsService } from './insights/weather-insights.service'
 
 @Injectable()
 export class WeatherDashboardService {
   constructor(
     @InjectModel(Weather.name)
-    private weatherModel: Model<WeatherDocument>,
+    private readonly weatherModel: Model<WeatherDocument>,
+    private readonly insightsService: WeatherInsightsService,
   ) {}
 
-  async getDashboard(city: string) {
-   const logs = await this.weatherModel
-  .find({ city })
-  .sort({ createdAt: -1 })
-  .limit(50)
-  .lean<{ 
-    temperature: number;
-    windSpeed: number;
-    humidity: number;
-    createdAt: Date;
-  }[]>();
+  async getDashboard(city = 'Porto Velho') {
+    const logs = await this.weatherModel
+      .find({ city })
+      .sort({ collectedAt: -1 })
+      .limit(50)
+      .lean()
 
-
-    if (!logs.length) {
-      return null;
+    if (!logs || logs.length === 0) {
+      return {
+        city,
+        period: 'last_24h',
+        updatedAt: new Date(),
+        cards: null,
+        chart: { labels: [], data: [] },
+        table: [],
+        insights: [],
+      }
     }
 
-    const temps = logs.map((l) => l.temperature);
-    const current = temps[0];
+    const temps = logs
+      .map(l => l.temperature)
+      .filter((t): t is number => typeof t === 'number')
 
-    const avg =
-      temps.reduce((a, b) => a + b, 0) / temps.length;
+    if (temps.length === 0) {
+      return {
+        city,
+        period: 'last_24h',
+        updatedAt: new Date(),
+        cards: null,
+        chart: { labels: [], data: [] },
+        table: [],
+        insights: [],
+      }
+    }
 
-    const max = Math.max(...temps);
-    const min = Math.min(...temps);
+    const current = temps[0]
+    const avg = temps.reduce((a, b) => a + b, 0) / temps.length
+    const max = Math.max(...temps)
+    const min = Math.min(...temps)
 
-    // 📈 tendência simples
     const trend =
-      temps[0] > temps[temps.length - 1] ? 'up' : 'down';
+      temps.length > 1
+        ? temps[0] > temps[temps.length - 1]
+          ? 'up'
+          : temps[0] < temps[temps.length - 1]
+          ? 'down'
+          : 'stable'
+        : 'stable'
 
     return {
       city,
@@ -57,59 +79,31 @@ export class WeatherDashboardService {
         labels: logs
           .slice()
           .reverse()
-          .map((l) =>
-            new Date(l.createdAt).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
+          .map(l =>
+            l.collectedAt
+              ? new Date(l.collectedAt).toLocaleTimeString('pt-BR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '--',
           ),
-        data: logs
-          .slice()
-          .reverse()
-          .map((l) => l.temperature),
+        data: logs.slice().reverse().map(l => l.temperature ?? 0),
       },
 
-      table: logs.slice(0, 10).map((l) => ({
-        time: l.createdAt,
-        temperature: l.temperature,
-        windSpeed: l.windSpeed,
-        humidity: l.humidity,
+      table: logs.slice(0, 10).map(l => ({
+        time: l.collectedAt ?? new Date(),
+        temperature: l.temperature ?? 0,
+        windSpeed: l.windSpeed ?? 0,
+        humidity: l.humidity ?? 0,
       })),
 
-      insights: this.buildInsights({
+      insights: this.insightsService.generate({
+        current,
         avg,
         max,
-        current,
+        min,
         trend,
       }),
-    };
-  }
-
-  private buildInsights({
-    avg,
-    max,
-    current,
-    trend,
-  }: {
-    avg: number;
-    max: number;
-    current: number;
-    trend: string;
-  }): string[] {
-    const insights: string[] = [];
-
-    if (trend === 'up') {
-      insights.push('📈 Temperatura em tendência de alta');
     }
-
-    if (current > avg + 2) {
-      insights.push('🔥 Temperatura atual acima da média diária');
-    }
-
-    if (max > 35) {
-      insights.push('⚠️ Pico de calor elevado detectado');
-    }
-
-    return insights;
   }
 }
