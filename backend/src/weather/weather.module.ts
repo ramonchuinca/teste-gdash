@@ -12,6 +12,9 @@ import { WeatherDashboardService } from './dashboard.service';
 // Insights
 import { WeatherInsightsService } from './insights/weather-insights.service';
 
+//IA
+import { WeatherAIService } from './ai/weather-ai.service'
+
 
 @Module({
   imports: [
@@ -23,6 +26,7 @@ import { WeatherInsightsService } from './insights/weather-insights.service';
     WeatherService,
     WeatherInsightsService,
     WeatherDashboardService, // ✅ ADICIONADO
+      WeatherAIService, // ✅ OBRIGATÓRIO
   ],
   controllers: [
     WeatherController,

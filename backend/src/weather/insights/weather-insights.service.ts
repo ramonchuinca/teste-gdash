@@ -51,7 +51,9 @@ export class WeatherInsightsService {
         code: 'ABOVE_AVERAGE',
         message: 'Temperatura atual significativamente acima da média.',
       })
-    } else if (current <= avg - 2) {
+    }
+
+    if (current <= avg - 2) {
       insights.push({
         type: 'warning',
         code: 'BELOW_AVERAGE',

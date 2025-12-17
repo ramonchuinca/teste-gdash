@@ -1,8 +1,18 @@
 import { Injectable } from '@nestjs/common'
 
+export type WeatherTrend = 'up' | 'down' | 'stable'
+
+export interface WeatherAISummary {
+  title: string
+  summary: string
+  trendExplanation: string
+  forecast: string
+  generatedAt: Date
+}
+
 @Injectable()
 export class WeatherAIService {
-  generateSummary({
+  generate({
     city,
     current,
     avg,
@@ -15,12 +25,12 @@ export class WeatherAIService {
     avg: number
     max: number
     min: number
-    trend: 'up' | 'down' | 'stable'
-  }) {
+    trend: WeatherTrend
+  }): WeatherAISummary {
     let trendText = 'estável'
 
     if (trend === 'up') trendText = 'em elevação'
-    if (trend === 'down') trendText = 'em queda'
+    else if (trend === 'down') trendText = 'em queda'
 
     let comfort = 'agradável'
     if (current >= 35) comfort = 'muito quente'

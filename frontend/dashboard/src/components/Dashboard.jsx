@@ -38,54 +38,58 @@ export default function Dashboard() {
   const chartRef = useRef(null);
 
   const loadDashboard = useCallback(async (force = false) => {
-    const now = Date.now();
+  const now = Date.now();
 
-    if (
-      !force &&
-      cacheRef.current.data &&
-      now - cacheRef.current.timestamp < 30_000
-    ) {
-      const cached = cacheRef.current.data;
-      setCards(cached.cards);
-      setChart(cached.chart);
-      setTable(cached.table);
-      setInsights(cached.insights);
+  /* =========================
+     ✅ CACHE (30s)
+  ========================= */
+  if (
+    !force &&
+    cacheRef.current.data &&
+    now - cacheRef.current.timestamp < 30_000
+  ) {
+    const cached = cacheRef.current.data;
+
+    setCards(cached.cards);
+    setChart(cached.chart);
+    setTable(cached.table);
+    setInsights(cached.insights);
+    setAi(cached.ai ?? null); // ✅ CORREÇÃO
+    setLoading(false);
+    return;
+  }
+
+  /* =========================
+     ⏳ DEBOUNCE (300ms)
+  ========================= */
+  clearTimeout(debounceRef.current);
+
+  debounceRef.current = setTimeout(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res = await api.get("/dashboard");
+
+      cacheRef.current = {
+        data: res.data,
+        timestamp: Date.now(),
+      };
+
+      setCards(res.data?.cards ?? null);
+      setChart(res.data?.chart ?? { labels: [], data: [] });
+      setTable(Array.isArray(res.data?.table) ? res.data.table : []);
+      setInsights(Array.isArray(res.data?.insights) ? res.data.insights : []);
+      setAi(res.data?.ai ?? null); // ✅ CORREÇÃO
+    } catch (e) {
+      console.error(e);
+      setError("Erro ao carregar dashboard");
+    } finally {
       setLoading(false);
-      return;
     }
+  }, 300);
+}, []);
 
-    clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await api.get("/dashboard");
-
-        cacheRef.current = {
-          data: res.data,
-          timestamp: Date.now(),
-        };
-
-        setCards(res.data?.cards ?? null);
-        setChart(res.data?.chart ?? { labels: [], data: [] });
-        setTable(Array.isArray(res.data?.table) ? res.data.table : []);
-        setInsights(Array.isArray(res.data?.insights) ? res.data.insights : []);
-      } catch (e) {
-        console.error(e);
-        setError("Erro ao carregar dashboard");
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-  }, []);
-
-  useEffect(() => {
-    loadDashboard(true);
-    const interval = setInterval(() => loadDashboard(), 30_000);
-    return () => clearInterval(interval);
-  }, [loadDashboard]);
 
   /* 🎨 CORES DINÂMICAS */
   const getTempColor = (temp = 0) => {

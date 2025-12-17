@@ -4,6 +4,7 @@ import { Model } from 'mongoose'
 
 import { Weather, WeatherDocument } from './schemas/weather.schema'
 import { WeatherInsightsService } from './insights/weather-insights.service'
+import { WeatherAIService } from './ai/weather-ai.service'
 
 @Injectable()
 export class WeatherDashboardService {
@@ -11,6 +12,7 @@ export class WeatherDashboardService {
     @InjectModel(Weather.name)
     private readonly weatherModel: Model<WeatherDocument>,
     private readonly insightsService: WeatherInsightsService,
+    private readonly aiService: WeatherAIService,
   ) {}
 
   async getDashboard(city = 'Porto Velho') {
@@ -28,6 +30,7 @@ export class WeatherDashboardService {
       chart: { labels: [], data: [] },
       table: [],
       insights: [],
+      ai: null,
     }
 
     if (!logs.length) return baseResponse
@@ -89,6 +92,16 @@ export class WeatherDashboardService {
           min,
           trend,
         }) ?? [],
+
+      /* 🧠 IA */
+      ai: this.aiService.generate({
+        city,
+        current,
+        avg,
+        max,
+        min,
+        trend,
+      }),
     }
   }
 }
